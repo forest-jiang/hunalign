@@ -44,8 +44,15 @@ Arguments:\n\
 	It is not set by default because it approximately triples the running time\n\
 	while the quality improvement it yields are typically small.\n\
 \n\
+\n\
 -autodict=filename\n\
 	The dictionary built during realign is saved to this file. By default, it is not saved.\n\
+\n\
+-dictbuild\n\
+  Use hunalign as a tool to generate autodict only. The input source_text and target_text must be one-to-one aligned.\n\
+\n\
+-noalign\n\
+  Does not align the sentences, but score them only. The input source_text and target_text must be one-to-one aligned.\n\
 \n\
 \n\
 -onebyteencoding\n\

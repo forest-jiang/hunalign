@@ -1037,7 +1037,7 @@ void cooccurenceAnalysis( SentenceList& huSentenceList, SentenceList& enSentence
 
 //x     {
 //x     BiWords biWords;
-//x     biWords.push_back(BiWord("fehér köpenyes ember","man in white"));
+//x     biWords.push_back(BiWord("fehï¿½r kï¿½penyes ember","man in white"));
 //x     for ( int i=0; i<biWords.size(); ++i )
 //x     {
 //x       automaticLexicon.push_back(biWords[i]);
@@ -1150,7 +1150,7 @@ void preprocessAndBuildCooccurrenceData( SentenceList& huSentenceList, SentenceL
 
 // Adds to the dictionary it recieves as input.
 void autoDictionaryForRealign( SentenceList& huSentenceList, SentenceList& enSentenceList,
-                          DictionaryItems& dictionary,
+                          DictionaryItems& dictionary, std::vector<double>& scores,
                           double minScore, int minCoocc )
 {
   CorpusConstellation corpusConstellation;
@@ -1180,8 +1180,18 @@ void autoDictionaryForRealign( SentenceList& huSentenceList, SentenceList& enSen
       // std::cout << biWord.first << "\t" << biWord.second << std::endl;
 
       dictionary.push_back(dictionaryItem);
+      scores.push_back(score);
     }
   }
+}
+
+void autoDictionaryForRealign( SentenceList& huSentenceList, SentenceList& enSentenceList,
+                          DictionaryItems& dictionary,
+                          double minScore, int minCoocc )
+{
+    std::vector<double> scores;
+    autoDictionaryForRealign( huSentenceList, enSentenceList, dictionary,
+                scores, minScore, minCoocc);
 }
 
 // Removes dictionary items for which it doesn't find cooccurrences in the bicorpus.

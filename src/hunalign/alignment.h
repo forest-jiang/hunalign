@@ -72,7 +72,8 @@ const double skipScore = -0.3;
 // dynMatrix[huPos][enPos] gives the similarity of the [0,huPos) and [0,enPos) intervals.
 void align( const AlignMatrix& w, const SentenceValues& huLength, const SentenceValues& enLength,
             Trail& bestTrail, AlignMatrix& dynMatrix );
-
+void noAlign( const AlignMatrix& w, const SentenceValues& huLength, const SentenceValues& enLength,
+                        Trail& bestTrail, AlignMatrix& dynMatrix );
 
 bool oneToOne( const Trail& bestTrail, int pos );
 

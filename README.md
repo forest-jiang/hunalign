@@ -166,6 +166,12 @@ The non-mandatory options are the following:
 -autodict=filename
     The dictionary built during realign is saved to this file. By default, it is not saved.
 
+-dictbuild
+    Use hunalign as a tool to generate autodict only. The input source_text and target_text must be one-to-one aligned.
+
+-noalign
+    Does not align the sentences, but score them only. The input source_text and target_text must be one-to-one aligned.
+
 -utf
     The system uses the character counts of the sentences as information for the
     pairing of sentences. By default, it assumes one-byte character encoding such

@@ -66,6 +66,35 @@ const unsigned char HuHuEnSkip = 4;
 const unsigned char HuEnEnSkip = 5;
 const unsigned char Dead = 6;
 
+void noAlign_buildDynProgMatrix( const AlignMatrix& w, const SentenceValues& huLength, const SentenceValues& enLength,
+                         QuasiDiagonal<double>& v )
+{
+  const int huBookSize = w.size();
+  const int enBookSize = w.otherSize();
+
+  for (int huPos=0; huPos<=huBookSize; ++huPos )
+  {
+    int rowStart = v.rowStart(huPos);
+    int rowEnd   = v.rowEnd(huPos);
+    double lengthFitness(0);
+
+    bool quasiglobal_lengthFitnessApplied = true;
+
+    if (huPos>0)
+    {
+      if (quasiglobal_lengthFitnessApplied)
+      {
+        lengthFitness = closeness(huLength[huPos-1], enLength[huPos-1]);
+      }
+      else
+      {
+        lengthFitness = 0;
+      }
+
+      v.cell(huPos, huPos) = v[huPos-1][huPos-1] - w[huPos-1][huPos-1] - lengthFitness ;
+    }
+  }
+}
 void buildDynProgMatrix( const AlignMatrix& w, const SentenceValues& huLength, const SentenceValues& enLength,
                          QuasiDiagonal<double>& v, TrelliMatrix& trellis )
 {
@@ -328,6 +357,19 @@ void trelliToLadder( const TrelliMatrix& trellis, Trail& bestTrail )
   std::reverse(bestTrail.begin(),  bestTrail.end()  );
 }
 
+void noAlign( const AlignMatrix& w, const SentenceValues& huLength, const SentenceValues& enLength,
+            Trail& bestTrail, AlignMatrix& v )
+{
+  const int huBookSize = w.size();
+  const int enBookSize = w.otherSize();
+  assert(huBookSize == enBookSize);
+  massert(w.size()+1 == v.size());
+  massert(w.otherSize()+1 == v.otherSize());
+  noAlign_buildDynProgMatrix( w, huLength, enLength, v );
+  for (int i = 0; i<huBookSize; i++) {
+    bestTrail.push_back(std::make_pair(i, i));
+  }
+}
 
 void align( const AlignMatrix& w, const SentenceValues& huLength, const SentenceValues& enLength,
             Trail& bestTrail, AlignMatrix& v )

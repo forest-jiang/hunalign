@@ -46,6 +46,10 @@ void filterBicorpusByLexicon
 void autoDictionaryForRealign( SentenceList& huSentenceList, SentenceList& enSentenceList,
                           DictionaryItems& dictionary,
                           double minScore, int minCoocc );
+void autoDictionaryForRealign( SentenceList& huSentenceList, SentenceList& enSentenceList,
+                                                    DictionaryItems& dictionary,
+                                                    std::vector<double>& scores,
+                                                    double minScore, int minCoocc );
 
 // Removes dictionary items for which it doesn't find cooccurrences in the bicorpus.
 // Typically, bicorpus is built from a primary alignment.

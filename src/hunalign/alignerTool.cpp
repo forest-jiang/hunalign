@@ -42,8 +42,8 @@ public:
 
   enum RealignType { NoRealign, ModelOneRealign, FineTranslationRealign, UpgradeDictRealign };
 
-  AlignParameters() : justSentenceIds(true), 
-    justBisentences(false), cautiousMode(false),
+  AlignParameters() : justSentenceIds(true),
+    justBisentences(false), cautiousMode(false), noAlign(false),
     realignType(NoRealign),
     qualityThreshold(-100000),
     postprocessTrailQualityThreshold(-1),
@@ -55,6 +55,7 @@ public:
 
   bool justSentenceIds;
   bool justBisentences;
+  bool noAlign;
 
   bool cautiousMode;
   double postprocessTrailQualityThreshold;
@@ -306,7 +307,12 @@ double alignerToolWithObjects( const DictionaryItems& dictionary,
   Trail bestTrail;
   AlignMatrix dynMatrix( huBookSize+1, enBookSize+1, thickness, 1e30 );
 
-  align( similarityMatrix, huLength, enLength, bestTrail, dynMatrix );
+  if (alignParameters.noAlign)
+  {
+    noAlign( similarityMatrix, huLength, enLength, bestTrail, dynMatrix );
+  } else {
+    align( similarityMatrix, huLength, enLength, bestTrail, dynMatrix );
+  }
   std::cerr << "Align ready." << std::endl;
 
   double globalQuality;
@@ -315,7 +321,7 @@ double alignerToolWithObjects( const DictionaryItems& dictionary,
 
   std::cerr << "Global quality of unfiltered align " << globalQuality << std::endl;
 
-  if (alignParameters.realignType==AlignParameters::NoRealign)
+  if (alignParameters.realignType==AlignParameters::NoRealign || alignParameters.noAlign)
   {
   }
   else
@@ -632,6 +638,55 @@ void alignerToolWithFilenames( const DictionaryItems& dictionary,
 
 }
 
+bool tmpCmp(const std::pair<double, DictionaryItem>& a,
+            const std::pair<double, DictionaryItem>& b) {
+              return a>b;
+            }
+void dictBuildTool( const char* huFilename, const char* enFilename,
+  const AlignParameters& alignParameters, double minScore, int minCoocc )
+{
+  SentenceList huSentenceList;
+  SentenceList enSentenceList;
+
+  std::ifstream hus(huFilename);
+  huSentenceList.readNoIds(hus);
+  std::ifstream ens(enFilename);
+  enSentenceList.readNoIds(ens);
+
+  if (huSentenceList.size()!=enSentenceList.size())
+  {
+    std::cerr << "Number of sentences not matching: "
+      << huSentenceList.size() << " versus " << enSentenceList.size() << "."
+      << std::endl;
+    throw "data error";
+  }
+  else
+  {
+    std::cerr << huSentenceList.size() << " bisentences read." << std::endl;
+  }
+  DictionaryItems dictionary;
+  std::vector<double> scores;
+  autoDictionaryForRealign( huSentenceList, enSentenceList, dictionary, scores, minScore, minCoocc );
+  std::vector<std::pair<double, DictionaryItem> > dictionary_with_scores;
+  for ( int i=0; i<dictionary.size(); ++i ) {
+    dictionary_with_scores.push_back(std::make_pair(scores[i], dictionary[i]));
+  }
+  std::sort(dictionary_with_scores.begin(), dictionary_with_scores.end(), tmpCmp);
+
+  if (alignParameters.autoDictionaryDumpFilename!="")
+  {
+    std::ofstream dictStream(alignParameters.autoDictionaryDumpFilename.c_str());
+    for ( int i=0; i<dictionary.size(); ++i )
+    {
+      // dictionary_with_scores
+      dictStream << dictionary_with_scores[i].second.first[0] << " @ " << dictionary_with_scores[i].second.second[0] << " | "
+        << dictionary_with_scores[i].first << std::endl;
+    }
+    std::cerr << dictionary.size() << " dictionary items found." << std::endl;
+
+  }
+}
+
 void fillPercentParameter( Arguments& args, const std::string& argName, double& value )
 {
   int valueInt;
@@ -681,6 +736,12 @@ int main_alignerTool(int argC, char* argV[])
       alignParameters.cautiousMode = true;
     }
 
+    if (args.getSwitchCompact("noalign"))
+    {
+      alignParameters.noAlign = true;
+      std::cerr << "Only score the aligned bisentences with -noalign enabled. Ignoring -realign flag." << std::endl;
+    }
+
     alignParameters.utfCharCountingMode = true;
     bool utfObsolete = args.getSwitchCompact("utf");
     if (utfObsolete) {
@@ -725,7 +786,7 @@ int main_alignerTool(int argC, char* argV[])
 
     int minScore100 = 0;
     if ( args.getNumericParam("minscorefordictbuild", minScore100)) {
-      if ((alignParameters.realignType!=AlignParameters::NoRealign) && !justDictBuilding) {
+      if ((alignParameters.realignType==AlignParameters::NoRealign) && !justDictBuilding) {
         std::cerr << "-minscorefordictbuild is only meaningful with either -realign or -dictbuild" << std::endl;
         throw "argument error";
       }
@@ -884,8 +945,8 @@ int main_alignerTool(int argC, char* argV[])
       const char* enFilename  = remains[2] ;
 
       if (justDictBuilding) {
-        throw "unimplemented";
-        // cooccurrenceTool( huFilename, enFilename, alignParameters.minScoreForDictBuild, alignParameters.minCooccForDictBuild );
+        // throw "unimplemented";
+        dictBuildTool( huFilename, enFilename, alignParameters, alignParameters.minScoreForDictBuild, alignParameters.minCooccForDictBuild );
       }
       else {
         // Main codepath
